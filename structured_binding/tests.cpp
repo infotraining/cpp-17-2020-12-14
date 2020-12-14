@@ -86,7 +86,7 @@ TEST_CASE("Structured bindings")
     {
         int tab[2] = {1, 2};
 
-        auto [x, y, z] = tab;
+        auto [x, y] = tab;
 
         REQUIRE(x == 1);
         REQUIRE(y == 2);
@@ -229,19 +229,29 @@ struct std::tuple_element<1, Something>
 
 // step 3 - get<Index>
 template <size_t Index>
-decltype(auto) get(const Something&);
-
-template <>
-decltype(auto) get<0>(const Something& sth)
+decltype(auto) get(const Something& sth)
 {
-    return static_cast<int>(sth);
+    if constexpr(Index == 0)
+    {
+        return static_cast<int>(sth);
+    }
+    else if constexpr(Index == 1)
+    {
+        return something_desc.at(sth);
+    }
 }
 
-template <>
-decltype(auto) get<1>(const Something& sth)
-{
-    return something_desc.at(sth);
-}
+// template <>
+// decltype(auto) get<0>(const Something& sth)
+// {
+//     return static_cast<int>(sth);
+// }
+
+// template <>
+// decltype(auto) get<1>(const Something& sth)
+// {
+//     return something_desc.at(sth);
+// }
 
 TEST_CASE("tuple-like protocol")
 {

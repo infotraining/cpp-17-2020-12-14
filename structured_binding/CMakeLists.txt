@@ -12,7 +12,7 @@ aux_source_directory(. SRC_LIST)
 # Headers
 file(GLOB HEADERS_LIST "*.h" "*.hpp")
 add_executable(${PROJECT_NAME} ${SRC_LIST} ${HEADERS_LIST})
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
 #----------------------------------------
 # Tests

@@ -11,6 +11,23 @@ enum class Bitfields : uint32_t
     value
 };
 
+template <> struct std::tuple_size<Bitfields>
+{
+  static constexpr size_t value = 4;
+};
+
+template <size_t Index>
+struct std::tuple_element<Index, Bitfields>
+{
+  using type = uint8_t;
+};
+
+template <size_t Index>
+decltype(auto) get(const Bitfields& arg)
+{
+    return static_cast<uint8_t>(static_cast<uint32_t>(arg) >> ( (3 - Index) * 8 ) );
+}
+
 TEST_CASE("split integer to bytes")
 {
     Bitfields value{0b00000001'11100010'00000100'01001000};

@@ -86,7 +86,7 @@ TEST_CASE("Structured bindings")
     {
         int tab[2] = {1, 2};
 
-        auto [x, y] = tab;
+        auto [x, y, z] = tab;
 
         REQUIRE(x == 1);
         REQUIRE(y == 2);

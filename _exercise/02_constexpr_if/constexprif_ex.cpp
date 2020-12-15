@@ -45,7 +45,7 @@ TEST_CASE("constexpr-if with iterator categories")
 
         auto it = data.begin();
 
-        auto result = std::advance(it, 3);
+        auto result = advance_it(it, 3);
         static_assert(std::is_same_v<decltype(result), std::bidirectional_iterator_tag>);
 
         REQUIRE(*it == 4);

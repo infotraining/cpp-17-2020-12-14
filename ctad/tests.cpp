@@ -346,6 +346,8 @@ TEST_CASE("CTAD + std library")
 
         std::array arr1 = {1, 2, 3, 4}; // std::array<int, 4>
     }
+
+    std::map m1 = {std::pair{"foo"s, 2}, std::pair{"bar"s, 3}};
 }
 
 template <typename T>

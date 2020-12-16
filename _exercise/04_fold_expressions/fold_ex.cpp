@@ -14,10 +14,14 @@ using namespace std;
 
 // TODO
 
+template<typename T, typename... Args>
+uintmax_t matches(const T& cont, Args&&... args)
+{
+    return (... + std::count(std::begin(cont), std::end(cont), args));
+}
+
 TEST_CASE("matches - returns how many items is stored in a container")
 {
-    // Tip: use std::count() algorithm
-
     vector<int> v{1, 2, 3, 4, 5};
 
     REQUIRE(matches(v, 2, 5) == 2);
@@ -44,7 +48,18 @@ public:
     }
 };
 
-// TODO
+template <typename... TArgs>
+auto make_vector(TArgs&&... args)
+{
+  using TCom = std::common_type_t<TArgs...>;
+
+  std::vector<TCom> outvec;
+  outvec.reserve(sizeof...(args));
+  
+  (..., outvec.push_back(std::forward<TArgs>(args)));
+  
+  return outvec;
+}
 
 TEST_CASE("make_vector - create vector from a list of arguments")
 {
@@ -59,9 +74,18 @@ TEST_CASE("make_vector - create vector from a list of arguments")
         REQUIRE_THAT(v, Equals(vector{1, 2, 3}));
     }
 
+    SECTION("string")
+    {
+        string str = "abc";
+
+        std::vector v = make_vector("aaa"s, str);
+
+        REQUIRE(v == vector{"aaa"s, "abc"s});
+    }
+
     SECTION("unique_ptrs")
     {
-        auto ptrs = make_vector(make_unique<int>(5), make_unique<int>(6));
+        const auto ptrs = make_vector(make_unique<int>(5), make_unique<int>(6));
 
         REQUIRE(ptrs.size() == 2);
     }
@@ -79,13 +103,30 @@ TEST_CASE("make_vector - create vector from a list of arguments")
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////////////////////////////////
 
 // TODO
 
+template <typename T>
+struct Range
+{
+    T low, high;
+};
+
+template <typename T1, typename T2>
+Range(T1, T2) -> Range<std::common_type_t<T1, T2>>;
+
+template <typename T, typename... TArgs>
+bool within(const Range<T>& range, const TArgs&... args)
+{
+    auto in_range = [&range](const auto& value) { return value >= range.low && value <= range.high; };
+
+    return (... && in_range(args));
+}
+
 TEST_CASE("within - checks if all values fit in range [low, high]")
 {
-    REQUIRE(within(Range{10, 20.0}, 1, 15, 30) == false);
-    REQUIRE(within(Range{10, 20}, 11, 12, 13) == true);
+    REQUIRE(within(Range{10, 20.1}, 1, 15, 30) == false);
+    REQUIRE(within(Range{10, 20}, 10, 12, 13) == true);
     REQUIRE(within(Range{5.0, 5.5}, 5.1, 5.2, 5.3) == true);
 }

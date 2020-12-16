@@ -1,10 +1,13 @@
 #include <algorithm>
-#include <numeric>
 #include <iostream>
-#include <string>
-#include <vector>
 #include <list>
+#include <map>
+#include <numeric>
+#include <optional>
+#include <string>
 #include <tuple>
+#include <vector>
+#include <array>
 
 #include "catch.hpp"
 
@@ -34,7 +37,7 @@ TEST_CASE("Template Argument Deduction - case 1")
     const int& cref_x = cx;
     int tab[10];
 
-    [[maybe_unused]] auto a1 = x;  // int
+    [[maybe_unused]] auto a1 = x; // int
     deduce1(x);
 
     [[maybe_unused]] auto a2 = cx; // int
@@ -104,6 +107,7 @@ namespace Explain
     class vector
     {
         std::list<T> items_;
+
     public:
         void push_back(const T& item) // lvalue ref to const
         {
@@ -115,13 +119,13 @@ namespace Explain
         {
             puts(__PRETTY_FUNCTION__);
             items_.push_back(std::move(item));
-        }  
+        }
 
         template <typename... TArgs>
         void emplace_back(TArgs&&... args)
         {
             items_.emplace_back(std::forward<TArgs>(args)...);
-        }    
+        }
     };
 }
 
@@ -131,8 +135,8 @@ TEST_CASE("Template Argument Deduction - case 3")
 
     [[maybe_unused]] auto&& a1 = 10; // int&&
     deduce3(10);
-    
-    [[maybe_unused]] auto&& a2 = x;  // int&
+
+    [[maybe_unused]] auto&& a2 = x; // int&
     deduce3(x);
 
     Explain::vector<std::string> vec;
@@ -188,8 +192,8 @@ void use(TGadget&& g)
 
 TEST_CASE("using gadgets")
 {
-    Gadget g{"ipad"};
-    const Gadget cg{"const ipad"};
+    Gadget g {"ipad"};
+    const Gadget cg {"const ipad"};
 
     // have_fun(g);
     // have_fun(cg);
@@ -197,7 +201,7 @@ TEST_CASE("using gadgets")
 
     use(g);
     use(cg);
-    use(Gadget{"temp ipad"});
+    use(Gadget {"temp ipad"});
 }
 
 template <typename T1, typename T2>
@@ -207,40 +211,43 @@ struct ValuePair
     T2 snd;
 
     template <typename TFirst, typename TSecond>
-    ValuePair(TFirst&& f, TSecond&& s) : fst{std::forward<TFirst>(f)}, snd{std::forward<TSecond>(s)}
-    {}
+    ValuePair(TFirst&& f, TSecond&& s)
+        : fst {std::forward<TFirst>(f)}
+        , snd {std::forward<TSecond>(s)}
+    {
+    }
 };
 
 // deduction guides
 template <typename T1, typename T2>
 ValuePair(T1, T2) -> ValuePair<T1, T2>;
 
-ValuePair(const char*, const char*) -> ValuePair<std::string, std::string>;
+ValuePair(const char*, const char*)->ValuePair<std::string, std::string>;
 
 TEST_CASE("CTAD")
 {
-    ValuePair<int, double> vp1{1, 3.14};
+    ValuePair<int, double> vp1 {1, 3.14};
 
-    ValuePair vp2{1, 3.14}; // ValuePair<int, double>
+    ValuePair vp2 {1, 3.14}; // ValuePair<int, double>
 
-    ValuePair vp3{3.14f, "text"}; // ValuePair<float, const char*>
+    ValuePair vp3 {3.14f, "text"}; // ValuePair<float, const char*>
 
-    ValuePair vp4{"text", "text"s}; // ValuePair<const char*, std::string>
+    ValuePair vp4 {"text", "text"s}; // ValuePair<const char*, std::string>
 
-    ValuePair vp5{"abc", "def"}; // ValuePair<std::string, std::string>
+    ValuePair vp5 {"abc", "def"}; // ValuePair<std::string, std::string>
 }
 
 TEST_CASE("CTAD - special case")
 {
-    std::vector vec{1, 2, 3}; // std::vector<int>
+    std::vector vec {1, 2, 3}; // std::vector<int>
 
-    std::vector data{vec}; // std::vector<int> - because copy syntax
+    std::vector data {vec}; // std::vector<int> - because copy syntax
     static_assert(std::is_same_v<decltype(data), std::vector<int>>);
 
-    std::vector big_data{vec, vec}; // std::vector<std::vector<int>>
+    std::vector big_data {vec, vec}; // std::vector<std::vector<int>>
 
-    std::tuple t1{1, 3.14}; // std::tuple<int, double>
-    std::tuple t2{t1}; // std::tuple<int, double> - because of copy syntax
+    std::tuple t1 {1, 3.14}; // std::tuple<int, double>
+    std::tuple t2 {t1}; // std::tuple<int, double> - because of copy syntax
 }
 
 /////////////////////////////////////////
@@ -259,5 +266,108 @@ Aggregate(T1, T2) -> Aggregate<T1, T2>;
 
 TEST_CASE("Aggregates + CTAD")
 {
-    Aggregate agg1{1, 3.14};
+    Aggregate agg1 {1, 3.14};
+}
+
+TEST_CASE("auto - strange things")
+{
+    auto ptr1 = new int(13); // int*
+    const auto ptr2 = new int(13); // int* const
+    const auto* ptr3 = new int(13); // const int*
+}
+
+TEST_CASE("CTAD + std library")
+{
+    int tab[10];
+    const int x = 10;
+
+    SECTION("std::pair")
+    {
+        std::pair p1 {tab, x}; // std::pair<int*, int>
+
+        SECTION("make_pair can do partial deduction")
+        {
+            auto p2 = std::make_pair<int>('a', 3.14);
+        }
+
+        std::map<int, std::string> dict;
+        dict.insert(std::pair(1, "one"));
+    }
+
+    SECTION("std::tuple")
+    {
+        std::tuple t1 {tab, x, 3.14, "text"s}; // std::tuple<int*, int, double, std::string>
+
+        std::tuple t2 = t1; // std::tuple<int*, int, double, std::string>
+        std::tuple t3 {t1}; // std::tuple<int*, int, double, std::string>
+
+        std::tuple t4 = std::pair {1, 3.14}; // std::tuple<int, double>
+
+        std::tuple<std::tuple<int, double>> t5 {t4};
+    }
+
+    SECTION("std::optional")
+    {
+        std::optional o1 = 42; // std::optional<int>
+
+        std::optional o2 {o1}; // std::optional<int>
+    }
+
+    SECTION("smart ptrs")
+    {
+        SECTION("deduction disabled for raw-pointers")
+        {
+            std::unique_ptr<int> uptr(new int(13));
+            std::shared_ptr<int> sptr(new int(42));
+        }
+
+        SECTION("deduction is enabled for conversions")
+        {
+            std::unique_ptr<int> uptr(new int(13));
+
+            std::shared_ptr sptr = std::move(uptr);
+            std::weak_ptr wptr = sptr;
+        }
+    }
+
+    SECTION("std::function")
+    {
+        std::function<void()> f = []{};
+
+        std::function f1 = [](int x){ std::cout << x << "\n"; };
+        f1(42);
+    }
+
+    SECTION("std::containers")
+    {
+        std::vector vec = {"one"s, "two"s, "three"s};
+
+        std::list lst(vec.begin(), vec.end());
+
+        std::array arr1 = {1, 2, 3, 4}; // std::array<int, 4>
+    }
+}
+
+template <typename T>
+struct DisableCTAD
+{
+    using type = T;
+};
+
+template <typename T>
+class UniquePtr
+{
+    T* ptr_;
+public:
+    using T_ = typename DisableCTAD<T>::type; // disables CTAD
+
+    explicit UniquePtr(T_* ptr) : ptr_{ptr}
+    {}
+
+    //...
+};
+
+TEST_CASE("how to disable CTAD")
+{
+    UniquePtr<int> uptr(new int(13));
 }

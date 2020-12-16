@@ -184,7 +184,7 @@ TEST_CASE("partition")
         });
     };
 
-    BENCHMARK_ADVANCED("parallel unsequencedszkol")
+    BENCHMARK_ADVANCED("parallel unsequenced")
     (Catch::Benchmark::Chronometer meter)
     {
         auto numbers_to_part = numbers;
